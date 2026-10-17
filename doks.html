@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>/// DOX GOST :: SYSTEM</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  html, body {
+    background: #000;
+    color: #00ff41;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    overflow-x: hidden;
+  }
+  
+  body {
+    min-height: 100vh;
+    position: relative;
+    animation: screenFlicker 4s infinite;
+  }
+  
+  @keyframes screenFlicker {
+    0%, 100% { background: #000; }
+    2% { background: #001a08; }
+    3% { background: #000; }
+    15% { background: #000; }
+    16% { background: #002a10; }
+    17% { background: #000; }
+    33% { background: #000; }
+    34% { background: #003a18; }
+    35% { background: #000; }
+    50% { background: #000; }
+    62% { background: #001a08; }
+    63% { background: #000; }
+    78% { background: #000; }
+    79% { background: #002a10; }
+    80% { background: #000; }
+  }
+  
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: #00ff41;
+    z-index: 99999;
+    pointer-events: none;
+    opacity: 0;
+    animation: whiteFlash 7s infinite;
+  }
+  
+  @keyframes whiteFlash {
+    0%, 100% { opacity: 0; }
+    48% { opacity: 0; }
+    48.5% { opacity: 0.08; }
+    49% { opacity: 0; }
+    72% { opacity: 0; }
+    72.3% { opacity: 0.05; }
+    72.6% { opacity: 0; }
+  }
+  
+  /* ===== ЭКРАН ЗАГРУЗКИ ===== */
+  #boot-screen {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: #000;
+    z-index: 100000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 20px;
+    transition: opacity 0.8s ease, visibility 0.8s ease;
+  }
+  
+  #boot-screen.hidden {
+    opacity: 0;
+    visibility: hidden;
+  }
+  
+  .boot-frame {
+    width: 100%;
+    max-width: 900px;
+    border: 2px solid #ff0040;
+    background: rgba(0, 10, 3, 0.55);
+    box-shadow: 0 0 40px rgba(255, 0, 64, 0.35), inset 0 0 40px rgba(255, 0, 64, 0.08);
+    padding: 28px 30px 24px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .boot-frame::before,
+  .boot-frame::after {
+    content: '';
+    position: absolute;
+    width: 26px; height: 26px;
+    border: 3px solid #00ff41;
+  }
+  .boot-frame::before { top: -3px; left: -3px; border-right: none; border-bottom: none; }
+  .boot-frame::after { bottom: -3px; right: -3px; border-left: none; border-top: none; }
+  
+  .boot-topline {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #00aaff;
+    letter-spacing: 2px;
+    margin-bottom: 18px;
+    text-shadow: 0 0 6px #00aaff;
+  }
+  .boot-topline .dot { color: #ff0040; animation: blink 1s infinite; }
+  .boot-topline .right { color: #ff6666; }
+  
+  .boot-logo {
+    font-size: 64px;
+    letter-spacing: 6px;
+    color: #ff0040;
+    font-family: 'Courier New', monospace;
+    font-weight: 900;
+    text-shadow: 0 0 10px #ff0040, 0 0 20px #ff0040, 0 0 40px #ff0040, 0 0 80px #ff0040;
+    margin-bottom: 6px;
+    animation: bootLogoFlicker 1.5s infinite;
+    text-align: center;
+    line-height: 1;
+  }
+  
+  @keyframes bootLogoFlicker {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    45% { opacity: 1; }
+    46% { opacity: 0.3; }
+    47% { opacity: 1; }
+    48% { opacity: 0.5; }
+    49% { opacity: 1; }
+    50% { transform: scale(1.02); }
+    51% { transform: scale(1); }
+  }
+  
+  .boot-subtitle {
+    font-size: 14px;
+    color: #ff6666;
+    letter-spacing: 5px;
+    margin-bottom: 26px;
+    animation: blink 1.2s infinite;
+    text-align: center;
+    text-shadow: 0 0 8px #ff0040;
+  }
+  
+  .boot-logs {
+    width: 100%;
+    min-height: 240px;
+    max-height: 42vh;
+    overflow-y: auto;
+    font-size: 14px;
+    color: #00ff41;
+    line-height: 1.75;
+    margin-bottom: 22px;
+    text-align: left;
+    padding-right: 12px;
+    border: 1px solid rgba(0, 255, 65, 0.25);
+    background: rgba(0, 0, 0, 0.55);
+    padding: 14px;
+    box-shadow: inset 0 0 25px rgba(0, 255, 65, 0.08);
+  }
+  
+  .boot-logs::-webkit-scrollbar { width: 6px; }
+  .boot-logs::-webkit-scrollbar-track { background: #000; }
+  .boot-logs::-webkit-scrollbar-thumb { background: #00ff41; }
+  
+  .boot-logs .line {
+    opacity: 0;
+    animation: fadeInLine 0.25s forwards;
+    display: flex;
+    gap: 10px;
+  }
+  
+  @keyframes fadeInLine {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  
+  .boot-logs .ts { color: #005522; min-width: 62px; }
+  .boot-logs .ok { color: #00ff41; }
+  .boot-logs .warn { color: #ffaa00; }
+  .boot-logs .err { color: #ff0040; }
+  .boot-logs .sys { color: #00aaff; }
+  .boot-logs .danger { color: #ff0040; text-shadow: 0 0 5px #ff0040; animation: dangerPulse 1s infinite; }
+  
+  @keyframes dangerPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+  
+  .boot-bar-container {
+    width: 100%;
+    height: 28px;
+    border: 2px solid #ff0040;
+    background: rgba(255,0,64,0.05);
+    position: relative;
+    box-shadow: 0 0 20px rgba(255,0,64,0.4), inset 0 0 20px rgba(255,0,64,0.1);
+    margin-bottom: 12px;
+  }
+  
+  .boot-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #ff0040, #ff6600, #ff0040);
+    background-size: 200% 100%;
+    animation: barGradient 2s linear infinite;
+    box-shadow: 0 0 15px #ff0040, inset 0 0 10px rgba(255,255,255,0.3);
+    transition: width 0.3s ease;
+  }
+  
+  @keyframes barGradient {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+  }
+  
+  .boot-bar-text {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 13px;
+    color: #fff;
+    text-shadow: 0 0 5px #000, 0 0 10px #000;
+    font-weight: 900;
+    letter-spacing: 3px;
+    z-index: 2;
+  }
+  
+  .boot-statusline {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    color: #ff6666;
+    margin-bottom: 10px;
+  }
+  .boot-statusline .l { color: #00aaff; }
+  .boot-statusline .c { color: #ffaa00; }
+  .boot-statusline .r { color: #ff0040; }
+  
+  .boot-percent {
+    font-size: 15px;
+    color: #ff0040;
+    letter-spacing: 4px;
+    animation: blink 0.9s infinite;
+    text-shadow: 0 0 10px #ff0040;
+    text-align: center;
+    margin-top: 4px;
+  }
+  
+  .boot-bottom {
+    margin-top: 18px;
+    font-size: 12px;
+    letter-spacing: 3px;
+    color: #00aaff;
+    text-shadow: 0 0 8px #00aaff;
+    animation: blink 1.4s infinite;
+    text-align: center;
+  }
+
+  /* ===== ФИНАЛЬНЫЙ ЭКРАН ЗАГРУЗКИ (МАСКА НА МЕСТЕ) ===== */
+  #final-screen {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: #000;
+    z-index: 100001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    overflow: hidden;
+    transition: opacity 1s ease, visibility 1s ease;
+  }
+  
+  #final-screen.show {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .final-mask {
+    width: 220px;
+    height: 285px;
+    fill: #000; 
+    stroke: #00ff41;
+    stroke-width: 3;
+    filter: drop-shadow(0 0 25px #00ff41) drop-shadow(0 0 50px rgba(0,255,65,0.8));
+    animation: finalFlicker 0.15s infinite;
+    position: relative;
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  @keyframes finalFlicker {
+    0%, 100% { opacity: 1; }
+    10% { opacity: 0.2; }
+    20% { opacity: 0.9; }
+    30% { opacity: 0.1; }
+    40% { opacity: 1; }
+    50% { opacity: 0.4; }
+    60% { opacity: 1; }
+    70% { opacity: 0.1; }
+    80% { opacity: 1; }
+    90% { opacity: 0.3; }
+  }
+
+  /* ===== ОСНОВНОЙ КОНТЕНТ ===== */
+  #main-content {
+    opacity: 0;
+    transition: opacity 2.5s ease;
+  }
+  
+  #main-content.visible { opacity: 1; }
+  
+  #matrix {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    opacity: 0.3;
+    animation: matrixFlicker 3s infinite;
+  }
+  
+  @keyframes matrixFlicker {
+    0%, 100% { opacity: 0.3; }
+    30% { opacity: 0.35; }
+    31% { opacity: 0.15; }
+    32% { opacity: 0.3; }
+    60% { opacity: 0.25; }
+    61% { opacity: 0.4; }
+    62% { opacity: 0.3; }
+  }
+  
+  /* ФОНОВЫЕ ОКНА */
+  .bg-window {
+    position: absolute;
+    background: rgba(0, 20, 5, 0.7);
+    border: 1px solid rgba(0, 255, 65, 0.4);
+    padding: 8px 12px;
+    font-size: 10px;
+    color: rgba(0, 255, 65, 0.6);
+    font-family: 'Courier New', monospace;
+    z-index: 0;
+    pointer-events: none;
+    white-space: pre;
+    line-height: 1.4;
+    box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+    animation: floatWindow 20s infinite ease-in-out, windowFlicker 4s infinite;
+    font-weight: bold;
+  }
+  
+  @keyframes windowFlicker {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 0.8; }
+    85% { opacity: 0.3; }
+    86% { opacity: 1; }
+    87% { opacity: 0.6; }
+  }
+  
+  .bg-window::before {
+    content: '● ● ●';
+    display: block;
+    color: rgba(0, 255, 65, 0.5);
+    font-size: 8px;
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid rgba(0, 255, 65, 0.2);
+    padding-bottom: 3px;
+  }
+  
+  @keyframes floatWindow {
+    0%, 100% { transform: translate(0, 0); }
+    25% { transform: translate(10px, -15px); }
+    50% { transform: translate(-5px, 10px); }
+    75% { transform: translate(15px, 5px); }
+  }
+  
+  .bg-window.w1 { top: 5%;  left: 3%;  animation-delay: 0s, 0.5s; }
+  .bg-window.w2 { top: 15%; right: 8%; animation-delay: -3s, 1s; }
+  .bg-window.w3 { top: 40%; left: 2%;  animation-delay: -6s, 2s; }
+  .bg-window.w4 { top: 55%; right: 3%; animation-delay: -9s, 0.3s; }
+  .bg-window.w5 { top: 75%; left: 5%;  animation-delay: -12s, 1.5s; }
+  .bg-window.w6 { bottom: 15%; right: 5%; animation-delay: -15s, 2.5s; }
+  
+  /* ЛЕТАЮЩИЕ НАДПИСИ */
+  .float-label {
+    position: absolute;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    font-weight: 900;
+    color: #00ff41;
+    text-shadow: 0 0 8px #00ff41, 0 0 16px #00ff41, 0 0 24px rgba(0,255,65,0.7);
+    z-index: 3;
+    pointer-events: none;
+    letter-spacing: 3px;
+    white-space: nowrap;
+    opacity: 0;
+    animation: floatLabel 12s infinite, labelFlicker 1.5s infinite;
+    padding: 4px 10px;
+    border-left: 2px solid #00ff41;
+    background: rgba(0,0,0,0.4);
+  }
+  
+  @keyframes labelFlicker {
+    0%, 100% { text-shadow: 0 0 8px #00ff41, 0 0 16px #00ff41; }
+    50% { text-shadow: 0 0 15px #00ff41, 0 0 30px #00ff41, 0 0 45px #00ff41; }
+    75% { text-shadow: 0 0 4px #00ff41; }
+  }
+  
+  .float-label::before { content: '> '; color: #00aaff; }
+  .float-label::after { content: ' ●'; color: #ff0040; animation: blink 0.8s infinite; }
+  
+  @keyframes floatLabel {
+    0%    { opacity: 0; transform: translateY(20px); }
+    5%    { opacity: 1; transform: translateY(0); }
+    25%   { opacity: 1; transform: translateY(0); }
+    30%   { opacity: 0; transform: translateY(-20px); }
+    100%  { opacity: 0; transform: translateY(-20px); }
+  }
+  
+  .fl-1 { top: 12%; left: 5%;  animation-delay: 0s, 0s; }
+  .fl-2 { top: 28%; right: 8%; animation-delay: 1.5s, 0.5s; }
+  .fl-3 { top: 45%; left: 3%;  animation-delay: 3s, 1s; }
+  .fl-4 { top: 62%; right: 5%; animation-delay: 4.5s, 1.5s; }
+  .fl-5 { top: 78%; left: 6%;  animation-delay: 6s, 2s; }
+  .fl-6 { top: 88%; right: 10%; animation-delay: 7.5s, 0.7s; }
+  .fl-7 { top: 20%; left: 25%; animation-delay: 9s, 1.2s; }
+  .fl-8 { top: 55%; right: 25%; animation-delay: 10.5s, 1.8s; }
+  .fl-9 { bottom: 8%; left: 15%; animation-delay: 2s, 0.3s; }
+  .fl-10 { top: 35%; left: 50%; animation-delay: 5s, 2.2s; }
+  
+  .float-label.danger {
+    color: #ff0040;
+    text-shadow: 0 0 8px #ff0040, 0 0 20px #ff0040;
+    border-left-color: #ff0040;
+  }
+  
+  .float-label.blue {
+    color: #00aaff;
+    text-shadow: 0 0 8px #00aaff, 0 0 20px #00aaff;
+    border-left-color: #00aaff;
+  }
+  
+  /* СКАНЛАЙНЫ */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: repeating-linear-gradient(0deg,
+      rgba(0,0,0,0.15) 0px, rgba(0,0,0,0.15) 1px,
+      transparent 1px, transparent 3px);
+    pointer-events: none; z-index: 997;
+  }
+  
+  #scanline {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(to bottom, transparent, rgba(0,255,65,0.7), transparent);
+    z-index: 995;
+    animation: scanMove 4s linear infinite;
+    pointer-events: none;
+    box-shadow: 0 0 20px #00ff41;
+  }
+  
+  @keyframes scanMove {
+    0% { top: -10px; }
+    100% { top: 100vh; }
+  }
+  
+  .container { max-width: 900px; margin: 0 auto; padding: 40px 20px 100px; position: relative; z-index: 10; }
+  
+  /* ======================================== */
+  /* ЛЕТАЮЩИЕ МАСКИ — 5 ШТУК, ПЛАВНЫЕ         */
+  /* ======================================== */
+  
+  .flying-mask {
+    position: fixed;
+    z-index: 99; 
+    pointer-events: none;
+    fill: #000; 
+    stroke: #00ff41;
+    stroke-width: 2.5;
+    filter: drop-shadow(0 0 10px #00ff41) drop-shadow(0 0 20px rgba(0,255,65,0.5));
+  }
+
+  .fly-1 {
+    width: 95px; height: 125px;
+    top: 10%; left: -30%;
+    animation: flyAcrossRight 8s ease-in-out infinite, maskFlicker 1.5s infinite;
+  }
+  @keyframes flyAcrossRight {
+    0%   { transform: translateX(0) translateY(0) rotate(0deg); opacity: 0; }
+    10%  { opacity: 1; }
+    25%  { transform: translateX(50vw) translateY(-10vh) rotate(90deg); }
+    50%  { transform: translateX(100vw) translateY(10vh) rotate(180deg); }
+    75%  { transform: translateX(150vw) translateY(-5vh) rotate(270deg); }
+    90%  { opacity: 1; }
+    100% { transform: translateX(200vw) translateY(0) rotate(360deg); opacity: 0; }
+  }
+
+  .fly-2 {
+    width: 125px; height: 165px;
+    top: 40%; right: -30%;
+    animation: flyAcrossLeft 9s ease-in-out infinite, maskFlicker 2s infinite;
+  }
+  @keyframes flyAcrossLeft {
+    0%   { transform: translateX(0) translateY(0) rotate(0deg); opacity: 0; }
+    10%  { opacity: 1; }
+    33%  { transform: translateX(-70vw) translateY(20vh) rotate(-120deg); }
+    66%  { transform: translateX(-140vw) translateY(-15vh) rotate(-240deg); }
+    90%  { opacity: 1; }
+    100% { transform: translateX(-200vw) translateY(0) rotate(-360deg); opacity: 0; }
+  }
+
+  .fly-3 {
+    width: 75px; height: 100px;
+    bottom: -30%; left: 10%;
+    animation: flyAcrossUp 7s ease-in-out infinite, maskFlicker 1.2s infinite;
+  }
+  @keyframes flyAcrossUp {
+    0%   { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0; }
+    10%  { opacity: 1; }
+    50%  { transform: translateY(-120vh) translateX(20vw) rotate(180deg); }
+    90%  { opacity: 1; }
+    100% { transform: translateY(-200vh) translateX(0) rotate(360deg); opacity: 0; }
+  }
+
+  .fly-4 {
+    width: 115px; height: 150px;
+    top: -30%; left: 40%;
+    animation: flyAcrossDown 8.5s ease-in-out infinite, maskFlicker 1.8s infinite;
+  }
+  @keyframes flyAcrossDown {
+    0%   { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0; }
+    10%  { opacity: 1; }
+    50%  { transform: translateY(120vh) translateX(-20vw) rotate(180deg); }
+    90%  { opacity: 1; }
+    100% { transform: translateY(200vh) translateX(0) rotate(360deg); opacity: 0; }
+  }
+
+  .fly-5 {
+    width: 155px; height: 200px;
+    top: -20%; left: -20%;
+    animation: flyDiagOut 9.5s ease-in-out infinite, maskFlicker 2.2s infinite;
+  }
+  @keyframes flyDiagOut {
+    0%   { transform: translate(0, 0) scale(0.8) rotate(0deg); opacity: 0; }
+    10%  { opacity: 1; }
+    50%  { transform: translate(70vw, 60vh) scale(1.2) rotate(180deg); }
+    90%  { opacity: 1; }
+    100% { transform: translate(140vw, 120vh) scale(0.8) rotate(360deg); opacity: 0; }
+  }
+  
+  @keyframes maskFlicker {
+    0%, 100% { opacity: 0.6; }
+    15% { opacity: 0.9; }
+    16% { opacity: 0.3; }
+    17% { opacity: 0.8; }
+    50% { opacity: 0.5; }
+    85% { opacity: 0.9; }
+    86% { opacity: 0.2; }
+    87% { opacity: 0.7; }
+  }
+
+  /* ЗАГОЛОВОК */
+  .header {
+    border: 2px solid #00ff41; padding: 20px; margin-bottom: 30px;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(4px);
+    box-shadow: 0 0 25px rgba(0,255,65,0.5), inset 0 0 20px rgba(0,255,65,0.05);
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    animation: headerFlicker 3s infinite;
+  }
+  
+  @keyframes headerFlicker {
+    0%, 100% { box-shadow: 0 0 25px rgba(0,255,65,0.5), inset 0 0 20px rgba(0,255,65,0.05); }
+    50% { box-shadow: 0 0 45px rgba(0,255,65,0.9), inset 0 0 30px rgba(0,255,65,0.15); }
+    85% { box-shadow: 0 0 10px rgba(0,255,65,0.2), inset 0 0 10px rgba(0,255,65,0.05); }
+    86% { box-shadow: 0 0 60px rgba(255,0,64,0.9), inset 0 0 40px rgba(255,0,64,0.3); }
+    87% { box-shadow: 0 0 25px rgba(0,255,65,0.5), inset 0 0 20px rgba(0,255,65,0.05); }
+  }
+  
+  .header::before {
+    content: '> DOX GOST :: SYSTEM ONLINE';
+    position: absolute; top: -10px; left: 15px;
+    background: #000; padding: 0 8px; font-size: 11px;
+    text-shadow: 0 0 5px #00ff41;
+    font-weight: bold;
+    animation: blink 2s infinite;
+  }
+  
+  .header-sym {
+    width: 80px;
+    height: 110px;
+    flex-shrink: 0;
+    fill: #000;
+    stroke: #00ff41;
+    stroke-width: 2.5;
+    filter: drop-shadow(0 0 10px #00ff41);
+    animation: headerMaskFlicker 1.5s infinite;
+  }
+  
+  @keyframes headerMaskFlicker {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    45% { opacity: 1; transform: scale(1); }
+    46% { opacity: 0.2; transform: scale(0.95); }
+    47% { opacity: 1; transform: scale(1.05); }
+    48% { opacity: 1; transform: scale(1); }
+    70% { opacity: 1; }
+    71% { opacity: 0.4; }
+    72% { opacity: 1; }
+  }
+  
+  .header-text { flex: 1; }
+  
+  h1 {
+    font-size: 38px;
+    letter-spacing: 3px;
+    text-shadow: 0 0 10px #00ff41, 0 0 20px #00ff41, 0 0 30px rgba(0,255,65,0.5);
+    animation: glitch 3s infinite, titleFlicker 2s infinite;
+    margin-bottom: 6px;
+    font-weight: 900;
+    position: relative;
+  }
+  
+  @keyframes titleFlicker {
+    0%, 100% { text-shadow: 0 0 10px #00ff41, 0 0 20px #00ff41, 0 0 30px rgba(0,255,65,0.5); }
+    50% { text-shadow: 0 0 20px #00ff41, 0 0 40px #00ff41, 0 0 60px rgba(0,255,65,0.8); }
+    75% { text-shadow: 0 0 5px #00ff41; }
+  }
+  
+  h1::before {
+    content: 'DOX GOST';
+    position: absolute;
+    top: 0; left: 0;
+    color: #ff0040;
+    opacity: 0;
+    animation: glitchRed 3s infinite;
+    clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
+  }
+  
+  h1::after {
+    content: 'DOX GOST';
+    position: absolute;
+    top: 0; left: 0;
+    color: #00aaff;
+    opacity: 0;
+    animation: glitchBlue 3s infinite;
+    clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%);
+  }
+  
+  @keyframes glitch {
+    0%, 90%, 100% { transform: translate(0); }
+    91% { transform: translate(-2px, 1px); }
+    92% { transform: translate(2px, -1px); }
+    93% { transform: translate(-1px, -1px); }
+    94% { transform: translate(0); }
+  }
+  
+  @keyframes glitchRed {
+    0%, 90%, 100% { opacity: 0; transform: translate(0); }
+    91% { opacity: 0.8; transform: translate(-3px, 0); }
+    93% { opacity: 0; }
+  }
+  
+  @keyframes glitchBlue {
+    0%, 90%, 100% { opacity: 0; transform: translate(0); }
+    92% { opacity: 0.8; transform: translate(3px, 0); }
+    94% { opacity: 0; }
+  }
+  
+  .subtitle { 
+    font-size: 13px; 
+    color: #00cc33; 
+    letter-spacing: 2px; 
+    font-weight: bold;
+    animation: subtitleFlicker 3s infinite;
+  }
+  
+  @keyframes subtitleFlicker {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.85; }
+    75% { opacity: 0.6; }
+    76% { opacity: 1; }
+  }
+  
+  .blink { animation: blink 1s infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  
+  .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+  input[type="text"] {
+    flex: 1; background: rgba(0,0,0,0.9);
+    border: 2px solid #00ff41;
+    color: #00ff41; padding: 16px; font-family: 'Courier New', monospace;
+    font-size: 15px; font-weight: bold; outline: none;
+    box-shadow: inset 0 0 10px rgba(0,255,65,0.15), 0 0 15px rgba(0,255,65,0.25);
+    transition: all 0.3s;
+    letter-spacing: 1px;
+    caret-color: #00ff41;
+  }
+  input[type="text"]:focus {
+    box-shadow: inset 0 0 15px rgba(0,255,65,0.4), 0 0 25px rgba(0,255,65,0.6);
+    animation: inputFlicker 2s infinite;
+  }
+  
+  @keyframes inputFlicker {
+    0%, 100% { box-shadow: inset 0 0 15px rgba(0,255,65,0.4), 0 0 25px rgba(0,255,65,0.6); }
+    50% { box-shadow: inset 0 0 25px rgba(0,255,65,0.6), 0 0 40px rgba(0,255,65,0.9); }
+  }
+  
+  input::placeholder { color: #00aa33; font-weight: bold; }
+  
+  button {
+    background: rgba(0,0,0,0.9); border: 2px solid #00ff41; color: #00ff41;
+    padding: 16px 28px; font-family: 'Courier New', monospace;
+    font-size: 15px; letter-spacing: 3px; cursor: pointer;
+    transition: all 0.2s; text-transform: uppercase;
+    box-shadow: 0 0 15px rgba(0,255,65,0.3);
+    font-weight: 900;
+  }
+  button:hover { 
+    background: #00ff41; 
+    color: #000; 
+    box-shadow: 0 0 30px #00ff41, 0 0 60px #00ff41;
+    animation: btnFlicker 0.3s infinite;
+  }
+  button:active { transform: scale(0.97); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  
+  @keyframes btnFlicker {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.85; }
+  }
+  
+  .output {
+    border: 2px solid #00ff41; padding: 20px;
+    background: rgba(0,0,0,0.9);
+    min-height: 110px;
+    font-size: 14px; line-height: 1.9; white-space: pre-wrap;
+    word-break: break-all;
+    box-shadow: inset 0 0 20px rgba(0,255,65,0.08), 0 0 20px rgba(0,255,65,0.25);
+    font-weight: bold;
+    animation: outputFlicker 4s infinite;
+  }
+  
+  @keyframes outputFlicker {
+    0%, 100% { box-shadow: inset 0 0 20px rgba(0,255,65,0.08), 0 0 20px rgba(0,255,65,0.25); }
+    50% { box-shadow: inset 0 0 30px rgba(0,255,65,0.15), 0 0 35px rgba(0,255,65,0.5); }
+  }
+  
+  .output::before {
+    content: '> LOG_OUTPUT '; color: #00aa33; display: block;
+    margin-bottom: 10px; font-size: 12px;
+    border-bottom: 1px dashed #00aa33; padding-bottom: 8px;
+    font-weight: 900;
+  }
+  
+  .error { color: #ff0040; text-shadow: 0 0 8px #ff0040; font-weight: 900; }
+  .success { color: #00ff41; text-shadow: 0 0 8px #00ff41; font-weight: 900; }
+  .info { color: #00aaff; text-shadow: 0 0 8px #00aaff; font-weight: 900; }
+  .cursor { display: inline-block; width: 9px; height: 15px; background: #00ff41;
+    animation: blink 1s infinite; vertical-align: middle; margin-left: 5px; }
+  
+  .status-bar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,0.95); border-top: 2px solid #00ff41;
+    padding: 9px 20px; font-size: 12px; color: #00cc33;
+    display: flex; justify-content: space-between; z-index: 1000;
+    font-weight: bold;
+    animation: statusFlicker 3s infinite;
+  }
+  
+  @keyframes statusFlicker {
+    0%, 100% { border-top-color: #00ff41; color: #00cc33; }
+    33% { border-top-color: #00aaff; color: #00aaff; }
+    66% { border-top-color: #ff0040; color: #ff0040; }
+  }
+  
+  .status-bar span { text-shadow: 0 0 5px currentColor; }
+  
+  .hint {
+    font-size: 12px;
+    color: #00aa33;
+    text-align: center;
+    margin-top: 20px;
+    letter-spacing: 1.5px;
+    font-weight: bold;
+    animation: hintFlicker 2s infinite;
+  }
+  
+  @keyframes hintFlicker {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+    75% { opacity: 0.4; }
+    76% { opacity: 1; }
+  }
+  
+  .format-btn {
+    display: block;
+    text-align: center;
+    padding: 15px;
+    margin: 8px 0;
+    text-decoration: none;
+    font-size: 14px;
+    letter-spacing: 2px;
+    border: 2px solid #00ff41;
+    color: #00ff41;
+    background: rgba(0,255,65,0.03);
+    transition: all 0.2s;
+    font-family: 'Courier New', monospace;
+    font-weight: 900;
+  }
+  .format-btn:hover {
+    background: #00ff41;
+    color: #000;
+    box-shadow: 0 0 20px #00ff41, 0 0 40px rgba(0,255,65,0.5);
+    animation: btnFlicker 0.3s infinite;
+  }
+  
+  @media (max-width: 768px) {
+    .flying-mask { opacity: 0.2; transform: scale(0.5); }
+    .bg-window { display: none; }
+    .float-label { font-size: 11px; }
+    h1 { font-size: 24px; }
+    .boot-logo { font-size: 36px; letter-spacing: 4px; }
+    .boot-frame { padding: 18px; }
+    .boot-logs { font-size: 11px; min-height: 160px; max-height: 35vh; }
+    .boot-bar-container { height: 22px; }
+    .boot-bar-text { font-size: 11px; }
+    .boot-statusline { flex-direction: column; gap: 4px; font-size: 10px; }
+    .final-mask { width: 160px; height: 210px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ЭКРАН ЗАГРУЗКИ -->
+<div id="boot-screen">
+  <div class="boot-frame">
+    <div class="boot-topline">
+      <span>SYS://DOX_GOST_TERMINAL_v9.0 <span class="dot">●</span></span>
+      <span class="right">ROOT@LOCALHOST</span>
+    </div>
+    <div class="boot-logo">DOXING</div>
+    <div class="boot-subtitle">⚠ UNAUTHORIZED ACCESS DETECTED ⚠</div>
+    <div class="boot-logs" id="boot-logs"></div>
+    <div class="boot-bar-container">
+      <div class="boot-bar" id="boot-bar"></div>
+      <div class="boot-bar-text" id="boot-bar-text">0%</div>
+    </div>
+    <div class="boot-statusline">
+      <span class="l" id="stat-left">PKT: 0</span>
+      <span class="c" id="stat-center">ETA: --</span>
+      <span class="r" id="stat-right">THREAT: HIGH</span>
+    </div>
+    <div class="boot-percent" id="boot-percent">INITIALIZING...</div>
+    <div class="boot-bottom">>>> PRESS ANY KEY TO CONTINUE &lt;&lt;&lt;</div>
+  </div>
+</div>
+
+<!-- ФИНАЛЬНЫЙ ЭКРАН ЗАГРУЗКИ (МАСКА НА МЕСТЕ) -->
+<div id="final-screen">
+  <svg id="final-mask-svg" class="final-mask" viewBox="0 0 200 260" xmlns="http://www.w3.org/2000/svg">
+    <path d="M 40 50 Q 60 30, 90 45 Q 60 40, 40 50 Z" />
+    <path d="M 160 50 Q 140 30, 110 45 Q 140 40, 160 50 Z" />
+    <path d="M 30 85 Q 55 60, 85 85 Q 55 100, 30 85 Z" />
+    <circle cx="58" cy="82" r="8" fill="#00ff41"/>
+    <text x="58" y="87" font-family="Courier New" font-size="14" font-weight="bold" fill="#000" text-anchor="middle">@</text>
+    <path d="M 170 85 Q 145 60, 115 85 Q 145 100, 170 85 Z" />
+    <circle cx="142" cy="82" r="8" fill="#00ff41"/>
+    <text x="142" y="87" font-family="Courier New" font-size="14" font-weight="bold" fill="#000" text-anchor="middle">@</text>
+    <path d="M 100 60 L 100 140 Q 100 150, 85 155 M 100 140 Q 100 150, 115 155" fill="none" stroke="#00ff41" stroke-width="3"/>
+    <path d="M 20 160 Q 50 145, 90 165 Q 100 170, 110 165 Q 150 145, 180 160" fill="none" stroke="#00ff41" stroke-width="4"/>
+    <path d="M 40 180 Q 100 240, 160 180 Q 100 220, 40 180 Z" />
+    <path d="M 60 200 L 50 250 L 80 240 M 140 200 L 150 250 L 120 240 M 100 210 L 100 255" fill="none" stroke="#00ff41" stroke-width="3"/>
+    <path d="M 80 150 L 85 145 M 90 150 L 95 145 M 110 150 L 115 145 M 120 150 L 125 145" stroke="#00ff41" stroke-width="1" opacity="0.5"/>
+  </svg>
+</div>
+
+<!-- ОСНОВНОЙ КОНТЕНТ -->
+<div id="main-content">
+  <canvas id="matrix"></canvas>
+  <div id="scanline"></div>
+
+  <!-- 5 ЛЕТАЮЩИХ МАСОК -->
+  <svg class="flying-mask fly-1" viewBox="0 0 200 260" xmlns="http://www.w3.org/2000/svg">
+    <path d="M 40 50 Q 60 30, 90 45 Q 60 40, 40 50 Z" /><path d="M 160 50 Q 140 30, 110 45 Q 140 40, 160 50 Z" />
+    <path d="M 30 85 Q 55 60, 85 85 Q 55 100, 30 85 Z" /><circle cx="58" cy="82" r="8" fill="#00ff41"/>
+    <text x="58" y="87" font-family="Courier New" font-size="14" font-weight="bold" fill="#000" text-anchor="middle">@</text>
+    <path d="M 170 85 Q 145 60, 115 85 Q 145 100, 170 85 Z" /><circle cx="142" cy="82" r="8" fill="#00ff41"/>
+    <text x="142" y="87" font-family="Courier New" font-size="14" font-weight="bold" fill="#000" text-anchor="middle">@</text>
+    <path d="M 100 60 L 100 140 Q 100 150, 85 155 M 100 140 Q 100 150, 115 155" fill="none" stroke="#00ff41" stroke-width="3"/>
+    <path d="M 20 160 Q 50 145, 90 165 Q 100 170, 110 165 Q 150 145, 180 160" fill="none" stroke="#00ff41" stroke-width="4"/>
+    <path d="M 40 180 Q 100 240, 160 180 Q 100 220, 40 180 Z" />
+  </svg>
+  <svg class="flying-mask fly-2" viewBox="0 0 200 260" xmlns="http://www.w3.org/2000/svg">
+    <path d="M 40 50 Q 60 30, 90 45 Q 60 40, 40 50 Z" /><path d="M 160 50 Q 140 30, 110 45 Q 140 40, 160 50 Z" />
+    <path d="M 30 85 Q 55 60, 85 85 Q 55 100, 30 85 Z" /><circle cx="58" cy="82" r="8" fill="#00ff41"/>
+    <text x="58" y="87" font-family="Courier New" font-size="14" font-weight="bold" fill="#000" text-anchor="middle">@</text>
+    <path d="M 170 85 Q 145 60, 115 85 Q 145 100, 170 85 Z" /><circle cx="142" cy="82" r="8" fill="#00ff41"/>
+    <text x="142" y="87" font-family="Courier New" font-size="14" font-weight="bold" fill="#000" text-anchor="middle">@</text>
+    <path d="M 100 60 L 100 140 Q 100 150, 85 155 M 100 140 Q 100 150, 115 155" fill="none" stroke="#00ff41" stroke-width="3"/>
+    <path d="M 20 160 Q 50 145, 90 165 Q 100 170, 110 165 Q 150 145, 180 160" fill="none" stroke="#00ff41" stroke-width="4"/>
+    <path d="M 40 180 Q 100 240, 160 180 Q 100 220, 40 180 Z" />
+  </svg>
+  <svg class="flying-mask fly-3" viewBox="0 0 200 260" xmlns="http://www.w3.org/2000/svg">
+    <path d="M 40 50 Q 60 30, 90 45 Q 60 40, 40 50 Z" /><path d="M 160 50 Q 140 30, 110 45 Q 140 40, 160 50 Z" />
+    <path d="M 30 85 Q 55 60, 85 85 Q 55 100, 30 85 Z" /><circle cx="58" cy="82" r="8" fill="#00ff41"/>
+    <path d="M 170 85 Q 145 60, 115 85 Q 145 100, 170 85 Z" /><circle cx="142" cy="82" r="8" fill="#00ff41"/>
+    <path d="M 100 60 L 100 140 Q 100 150, 85 155 M 100 140 Q 100 150, 115 155" fill="none" stroke="#00ff41" stroke-width="3"/>
+    <path d="M 20 160 Q 50 145, 90 165 Q 100 170, 110 165 Q 150 145, 180 160" fill="none" stroke="#00ff41" stroke-width="4"/>
+    <path d="M 40 180 Q 100 240, 160 180 Q 100 220, 40 180 Z" />
+  </svg>
+  <svg class="flying-mask fly-4" viewBox="0 0 200 260" xmlns="http://www.w3.org/2000/svg">
+    <path d="M 40 50 Q 60 30, 90 45 Q 60 40, 40 50 Z" /><path d="M 160 50 Q 140 30, 110 45 Q 140 40, 160 50 Z" />
+    <path d="M 30 85 Q 55 60, 85 85 Q 55 100, 30 85 Z" /><path d="M 170 85 Q 145 60, 115 85 Q 145 100, 170 85 Z" />
+    <path d="M 100 60 L 100 140 Q 100 150, 85 155 M 100 140 Q 100 150, 115 155" fill="none" stroke="#00ff41" stroke-width="3"/>
+    <path d="M 20 160 Q 50 145, 90 165 Q 100 170, 110 165 Q 150 145, 180 160" fill="none" stroke="#00ff41" stroke-width="4"/>
+    <path d="M 40 180 Q 100 240, 160 180 Q 100 220, 40 180 Z" />
+  </svg>
+  <svg class="flying-mask fly-5" viewBox="0 0 200 260" xmlns="http://www.w3.org/2000/svg">
+    <path d="M 40 50 Q 60 30, 90 45 Q 60 40, 40 50 Z" /><path d="M 160 50 Q 140 30, 110 45 Q 140 40, 160 50 Z" />
+    <path d="M 30 85 Q 55 60, 85 85 Q 55 100, 30 85 Z" /><circle cx="58" cy="82" r="8" fill="#00ff41"/>
+    <text x="58" y="87" font-family="Courier New" font-size="14" font-weight="bold" fill="#000" text-anchor="middle">@</text>
+    <path d="M 170 85 Q 145 60, 115 85 Q 145 100, 170 85 Z" /><circle cx="142" cy="82" r="8" fill="#00ff41"/>
+    <text x="142" y="87" font-family="Courier New" font-size="14" font-weight="bold" fill="#000" text-anchor="middle">@</text>
+    <path d="M 100 60 L 100 140 Q 100 150, 85 155 M 100 140 Q 100 150, 115 155" fill="none" stroke="#00ff41" stroke-width="3"/>
+    <path d="M 20 160 Q 50 145, 90 165 Q 100 170, 110 165 Q 150 145, 180 160" fill="none" stroke="#00ff41" stroke-width="4"/>
+    <path d="M 40 180 Q 100 240, 160 180 Q 100 220, 40 180 Z" />
+  </svg>
+
+  <div class="float-label fl-1">DETECTING</div>
+  <div class="float-label fl-2 blue">SCANNING</div>
+  <div class="float-label fl-3 danger">DOXXING</div>
+  <div class="float-label fl-4">ENCRYPTING</div>
+  <div class="float-label fl-5 danger">BREACHING</div>
+  <div class="float-label fl-6 blue">TRACING</div>
+  <div class="float-label fl-7">EXTRACTING</div>
+  <div class="float-label fl-8 danger">INFILTRATING</div>
+  <div class="float-label fl-9 blue">ANALYZING</div>
+  <div class="float-label fl-10">DECRYPTING</div>
+
+  <div class="bg-window w1">root@doxgost:~# nmap -sS 0.0.0.0
+Starting Nmap 7.94
+PORT   STATE
+22/tcp open
+80/tcp open
+443/tcp open</div>
+
+  <div class="bg-window w2">$ ssh root@10.0.0.1
+Warning: Permanently added
+Password: ****
+Access granted.</div>
+
+  <div class="bg-window w3">[+] Loading exploit...
+[+] Bypassing firewall...
+[+] Injecting payload...
+[✓] Shell obtained.</div>
+
+  <div class="bg-window w4">0x4F 0x2A 0xFF 0x1B 0x9C
+0x00 0xDE 0xAD 0xBE 0xEF
+0xCA 0xFE 0xBA 0xBE 0x00
+0x13 0x37 0x42 0x69 0xAA</div>
+
+  <div class="bg-window w5">$ python3 hack.py
+[*] Scanning network...
+[*] Found 12 devices
+[!] Vulnerable: 3
+[✓] Ready to attack</div>
+
+  <div class="bg-window w6">$ sudo su -
+[sudo] password:
+root@doxgost:/# _
+ACCESS GRANTED</div>
+
+  <div class="container">
+    <div class="header">
+      <svg class="header-sym" viewBox="0 0 200 260" xmlns="http://www.w3.org/2000/svg">
+        <path d="M 40 50 Q 60 30, 90 45 Q 60 40, 40 50 Z" /><path d="M 160 50 Q 140 30, 110 45 Q 140 40, 160 50 Z" />
+        <path d="M 30 85 Q 55 60, 85 85 Q 55 100, 30 85 Z" /><circle cx="58" cy="82" r="8" fill="#00ff41"/>
+        <text x="58" y="87" font-family="Courier New" font-size="14" font-weight="bold" fill="#000" text-anchor="middle">@</text>
+        <path d="M 170 85 Q 145 60, 115 85 Q 145 100, 170 85 Z" /><circle cx="142" cy="82" r="8" fill="#00ff41"/>
+        <text x="142" y="87" font-family="Courier New" font-size="14" font-weight="bold" fill="#000" text-anchor="middle">@</text>
+        <path d="M 100 60 L 100 140 Q 100 150, 85 155 M 100 140 Q 100 150, 115 155" fill="none" stroke="#00ff41" stroke-width="3"/>
+        <path d="M 20 160 Q 50 145, 90 165 Q 100 170, 110 165 Q 150 145, 180 160" fill="none" stroke="#00ff41" stroke-width="4"/>
+        <path d="M 40 180 Q 100 240, 160 180 Q 100 220, 40 180 Z" />
+      </svg>
+      <div class="header-text">
+        <h1>DOX GOST</h1>
+        <div class="subtitle">// WE SEE YOU • WE KNOW YOU <span class="blink">●</span> v9.0</div>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <input type="text" id="urlInput" placeholder="https://youtube.com/watch?v=...">
+      <button onclick="process()" id="fetchBtn">SCAN</button>
+    </div>
+
+    <div class="output" id="output">
+      <span class="info">[SYSTEM]</span> DOX GOST online. Awaiting target...
+      <span class="cursor"></span>
+    </div>
+
+    <div id="result"></div>
+
+    <div class="hint">
+      // PASTE_URL → SCAN → SELECT_METHOD → DOWNLOAD
+    </div>
+  </div>
+
+  <div class="status-bar">
+    <span>● DOX GOST: ACTIVE</span>
+    <span id="clock">--:--:--</span>
+    <span>USER: GH0ST@DOXGOST</span>
+  </div>
+</div>
+
+<script>
+  /* ============================================ */
+  /* ЛОГИКА ЗАГРУЗКИ И ПЕРЕХОДОВ                   */
+  /* ============================================ */
+  const bootLogs = [
+    { text: '[INIT] Booting DOX GOST core...', cls: 'sys' },
+    { text: '[OK] Kernel loaded successfully', cls: 'ok' },
+    { text: '[SCAN] Connecting to target network...', cls: 'sys' },
+    { text: '[OK] Connection established', cls: 'ok' },
+    { text: '[SCAN] Detecting target node...', cls: 'sys' },
+    { text: '[DATA] TARGET ACQUIRED ✓', cls: 'ok' },
+    { text: '[DATA] SIGNATURE CAPTURED ✓', cls: 'ok' },
+    { text: '[SCAN] Resolving DNS records...', cls: 'sys' },
+    { text: '[DATA] ROUTE MASKED ✓', cls: 'ok' },
+    { text: '[SCAN] Determining geographical location...', cls: 'sys' },
+    { text: '[DATA] LOCATION MASKED ✓', cls: 'ok' },
+    { text: '[DATA] PROXY CHAIN ESTABLISHED ✓', cls: 'ok' },
+    { text: '[DOX] Extracting metadata...', cls: 'danger' },
+    { text: '[DOX] SIGNATURE: user****@masked', cls: 'danger' },
+    { text: '[DOX] CHANNEL: +X (X**) ***-**-XX', cls: 'danger' },
+    { text: '[SCAN] Accessing camera...', cls: 'sys' },
+    { text: '[OK] Camera accessed ✓', cls: 'ok' },
+    { text: '[SCAN] Accessing microphone...', cls: 'sys' },
+    { text: '[OK] Microphone accessed ✓', cls: 'ok' },
+    { text: '[DOX] Uploading data to darknet...', cls: 'danger' },
+    { text: '[OK] Data uploaded to 42 nodes', cls: 'danger' },
+    { text: '[WARN] Your data is now on sale', cls: 'warn' },
+    { text: '[!!!] WELCOME TO DOX GOST [!!!]', cls: 'danger' }
+  ];
+
+  const bootLogsEl = document.getElementById('boot-logs');
+  const bootBar = document.getElementById('boot-bar');
+  const bootBarText = document.getElementById('boot-bar-text');
+  const bootPercent = document.getElementById('boot-percent');
+  const bootScreen = document.getElementById('boot-screen');
+  const finalScreen = document.getElementById('final-screen');
+  const mainContent = document.getElementById('main-content');
+  const statLeft = document.getElementById('stat-left');
+  const statCenter = document.getElementById('stat-center');
+
+  let currentLog = 0;
+  const totalLogs = bootLogs.length;
+
+  function showNextLog() {
+    if (currentLog >= totalLogs) {
+      setTimeout(() => {
+        bootScreen.classList.add('hidden');
+        finalScreen.classList.add('show');
+        // Маска просто висит по центру 2.2 сек, потом плавно открывается меню
+        setTimeout(() => {
+          finalScreen.classList.remove('show');
+          setTimeout(() => {
+            finalScreen.style.display = 'none';
+            mainContent.classList.add('visible');
+          }, 1000);
+        }, 2200);
+      }, 900);
+      return;
+    }
+
+    const log = bootLogs[currentLog];
+    const line = document.createElement('div');
+    line.className = 'line ' + log.cls;
+    const ts = document.createElement('span');
+    ts.className = 'ts';
+    const sec = String(Math.floor(currentLog / 3)).padStart(2, '0');
+    ts.textContent = `[00:${sec}]`;
+    const txt = document.createElement('span');
+    txt.textContent = log.text;
+    line.appendChild(ts);
+    line.appendChild(txt);
+    bootLogsEl.appendChild(line);
+    bootLogsEl.scrollTop = bootLogsEl.scrollHeight;
+
+    const percent = Math.round(((currentLog + 1) / totalLogs) * 100);
+    bootBar.style.width = percent + '%';
+    bootBarText.textContent = percent + '%';
+
+    statLeft.textContent = 'PKT: ' + (currentLog * 137 + Math.floor(Math.random() * 50));
+    const eta = Math.max(0, totalLogs - currentLog) * 0.2;
+    statCenter.textContent = 'ETA: ' + eta.toFixed(1) + 's';
+
+    if (percent < 30) bootPercent.textContent = 'SCANNING NETWORK...';
+    else if (percent < 60) bootPercent.textContent = 'DOXXING TARGET...';
+    else if (percent < 100) bootPercent.textContent = 'EXFILTRATING...';
+    else bootPercent.textContent = '⚠ ACCESS GRANTED ⚠';
+
+    currentLog++;
+    setTimeout(showNextLog, 150 + Math.random() * 100);
+  }
+
+  setTimeout(showNextLog, 500);
+
+  /* ============================================ */
+  /* МАТРИЦА                                      */
+  /* ============================================ */
+  const canvas = document.getElementById('matrix');
+  const ctx = canvas.getContext('2d');
+  let fontSize = 18;
+  let columns = 0;
+  let drops = [];
+  const chars = '0123456789'.split('');
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    columns = Math.floor(canvas.width / fontSize);
+    drops = [];
+    for (let i = 0; i < columns; i++) drops[i] = Math.random() * -100;
+  }
+
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  function drawMatrix() {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.font = 'bold ' + fontSize + 'px monospace';
+    for (let i = 0; i < drops.length; i++) {
+      const char = chars[Math.floor(Math.random() * chars.length)];
+      const x = i * fontSize;
+      const y = drops[i] * fontSize;
+      ctx.fillStyle = Math.random() > 0.97 ? '#ff0040' : (Math.random() > 0.94 ? '#00aaff' : '#ccffcc');
+      ctx.shadowColor = '#00ff41';
+      ctx.shadowBlur = 18;
+      ctx.fillText(char, x, y);
+      ctx.fillStyle = '#00ff41';
+      ctx.shadowBlur = 6;
+      ctx.fillText(chars[Math.floor(Math.random() * chars.length)], x, y - fontSize);
+      if (y > canvas.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i] += 0.5 + Math.random() * 0.5;
+    }
+    ctx.shadowBlur = 0;
+  }
+
+  setInterval(drawMatrix, 50);
+
+  /* ============================================ */
+  /* ЛОГИКА ОСНОВНОГО САЙТА                       */
+  /* ============================================ */
+  const output = document.getElementById('output');
+  const result = document.getElementById('result');
+  const urlInput = document.getElementById('urlInput');
+
+  setInterval(() => {
+    document.getElementById('clock').textContent = new Date().toTimeString().split(' ')[0];
+  }, 1000);
+
+  function log(msg, type = 'info') {
+    const line = document.createElement('div');
+    line.innerHTML = `<span class="${type}">[${type.toUpperCase()}]</span> ${msg}`;
+    output.appendChild(line);
+    output.scrollTop = output.scrollHeight;
+  }
+
+  function clearLog() {
+    output.innerHTML = '<span class="info">[SYSTEM]</span> New scan initiated...<span class="cursor"></span>';
+  }
+
+  function getVideoId(url) {
+    const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);
+    return m ? m[1] : null;
+  }
+
+  function process() {
+    const url = urlInput.value.trim();
+    if (!url) { clearLog(); log('URL not provided. Enter a YouTube link.', 'error'); return; }
+    const id = getVideoId(url);
+    if (!id) { clearLog(); log('Could not recognize video ID. Check the link.', 'error'); return; }
+
+    clearLog();
+    result.innerHTML = '';
+    log(`Target acquired: ${url}`, 'info');
+    log(`Video ID: ${id}`, 'info');
+    log('DETECTING signal...', 'info');
+    log('SCANNING network...', 'info');
+    log('TRACING route...', 'info');
+    log('DOXXING target metadata...', 'error');
+    log('Bypassing firewall...', 'info');
+    log('ENCRYPTING tunnel...', 'success');
+    log('DOX GOST activated. WE KNOW WHO YOU ARE.', 'success');
+    log('Generating extraction links...', 'success');
+    renderOptions(id);
+  }
+
+  function renderOptions(videoId) {
+    const options = [
+      { name: '► [EXTRACT] MP4 • 1080p',  url: `https://www.y2mate.com/youtube/${videoId}` },
+      { name: '► [EXTRACT] MP4 • 720p',   url: `https://ssyoutube.com/watch?v=${videoId}` },
+      { name: '► [EXTRACT] MP3 • Audio',  url: `https://www.y2mate.com/youtube-mp3/${videoId}` },
+      { name: '► [EXTRACT] MP4 • Any',    url: `https://en.savefrom.net/#url=https://www.youtube.com/watch?v=${videoId}` }
+    ];
+
+    const buttonsHtml = options.map(opt =>
+      `<a href="${opt.url}" target="_blank" rel="noopener" class="format-btn">${opt.name}</a>`
+    ).join('');
+
+    result.innerHTML = `
+      <div style="border:2px solid #00ff41; padding:20px; background:rgba(0,0,0,0.9); box-shadow:0 0 20px rgba(0,255,65,0.3); margin-top:20px;">
+        <div style="font-size:14px; color:#00aa33; margin-bottom:15px; border-bottom:1px dashed #00aa33; padding-bottom:8px; font-weight:900;">
+          // SELECT_EXTRACTION_METHOD:
+        </div>
+        ${buttonsHtml}
+        <div style="font-size:11px; color:#00aa33; margin-top:15px; text-align:center; letter-spacing:1px; font-weight:bold;">
+          // A downloader site will open in a new tab, click Download there
+        </div>
+      </div>
+    `;
+    log('Encrypted links generated. Choose method below.', 'success');
+  }
+
+  urlInput.addEventListener('keypress', e => { if (e.key === 'Enter') process(); });
+</script>
+
+</body>
+</html>
